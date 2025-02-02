@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate-XO</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #fff;
+            --cell-bg: #333;
+            --active-grid: #2a2a2a;
+            --primary-btn: #4CAF50;
+            --border-color: #444;
+            --box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            --current-player: gold;
+        }
+
+        .light-mode {
+            --bg-color: #f0f0f0;
+            --text-color: #333;
+            --cell-bg: #e0e0e0;
+            --active-grid: #d0d0d0;
+            --primary-btn: #2196F3;
+            --border-color: #ccc;
+            --box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            --current-player: #2196F3;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .header-buttons {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .current-player {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            padding: 10px 20px;
+            background: var(--cell-bg);
+            border-radius: 25px;
+            box-shadow: var(--box-shadow);
+        }
+
+        .current-player span {
+            color: var(--current-player);
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 100%;
+            padding: 10px;
+            position: relative;
+            margin-top: 80px;
+        }
+
+        .theme-toggle {
+            background: var(--primary-btn);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: var(--box-shadow);
+        }
+
+        .big-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            border: 3px solid var(--border-color);
+            padding: 5px;
+            background: var(--bg-color);
+            margin-top: 60px;
+        }
+
+        .small-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            border: 3px solid var(--border-color);
+            min-height: 100px;
+            position: relative;
+        }
+
+        .cell {
+            background: var(--cell-bg);
+            width: 10vw;
+            height: 10vw;
+            font-size: 5vw;
+            border: 2px solid var(--border-color);
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
+        .cell:hover {
+            filter: brightness(1.2);
+            transform: scale(1.05);
+        }
+
+        .active-grid {
+            background: var(--active-grid) !important;
+            box-shadow: 0px 0px 20px gold;
+            border: 5px solid gold;
+        }
+
+        .won-x {
+            background: #1a237e !important;
+            color: #fff !important;
+            border: 5px solid #1a237e; 
+        }
+
+        .won-o {
+            background: #b71c1c !important;
+            color: #fff !important;
+            border: 5px solid #b71c1c; 
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            font-size: 24px;
+            padding: 15px;
+            background: var(--cell-bg);
+            border-radius: 10px;
+            box-shadow: var(--box-shadow);
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            background: var(--primary-btn);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            border-radius: 25px;
+            font-size: 16px;
+            box-shadow: var(--box-shadow);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        #history-page, #help-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .history-container, .help-container {
+            background: var(--bg-color);
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--box-shadow);
+        }
+
+        .custom-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, 
+                rgba(76,175,80,0.9) 0%, 
+                rgba(33,150,243,0.9) 50%, 
+                rgba(156,39,176,0.9) 100%);
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 -2px 15px rgba(0,0,0,0.2);
+            backdrop-filter: blur(5px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @media (max-width: 600px) {
+            .cell {
+                width: 20vw;
+                height: 20vw;
+                font-size: 8vw;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-buttons">
+        <button class="theme-toggle" onclick="toggleTheme()">🌓 السمة</button>
+        <button onclick="showHelp()">❔ المساعدة</button>
+        <button onclick="switchVersion(12)">12×12</button>
+        <button onclick="switchVersion(25)">25×25</button>
+    </div>
+
+    <div id="history-page">
+        <div class="history-container">
+            <h2>📜 سجل المباريات</h2>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>👤 اللاعب</th>
+                        <th>⚡ الرمز</th>
+                        <th>🏆 النتيجة</th>
+                        <th>🎮 الخصم</th>
+                        <th>📅 التاريخ</th>
+                    </tr>
+                </thead>
+                <tbody id="history-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="help-page">
+        <div class="help-container">
+            <h2>🎮 كيفية اللعب</h2>
+            <p>1. اللاعب X يبدأ دائماً</p>
+            <p>2. اختر الخلية في الشبكة النشطة (الذهبية)</p>
+            <p>3. الفوز بثلاث خلايا متتالية في أي شبكة صغيرة</p>
+            <p>4. الفوز بثلاث شبكات متتالية في اللوحة الكبيرة</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="score-board">
+            <div class="player" id="player1">❌ X: <span>0</span></div>
+            <div class="player" id="player2">⭕ O: <span>0</span></div>
+        </div>
+        
+        <div class="current-player">اللاعب الحالي: <span id="current-player">X</span></div>
+
+        <div id="game-board" class="big-grid"></div>
+
+        <div class="controls">
+            <button id="reset">🔄 إعادة</button>
+            <button id="toggle-mode">🤖 ضد الكمبيوتر</button>
+            <button onclick="game.toggleAiVsAi()">🤖 ضد 🤖</button>
+            <button onclick="showHistory()">📚 السجل</button>
+            <button onclick="toggleMusic()">🎵<span id="music-status">تشغيل</span></button>
+        </div>
+    </div>
+
+    <audio id="click-sound" src="click.wav"></audio>
+    <audio id="win-sound" src="win.wav"></audio>
+    <audio id="background-music" loop src="music.ogg"></audio>
+
+    <footer class="custom-footer">
+        صنع بواسطة ✪Ahmed Taha♛♕♡ - <span id="year"></span>
+    </footer>
+
+    <script>
+        class UltimateTicTacToe {
+            constructor() {
+                // إصلاح تهيئة إعدادات الصوت
+                this.soundEnabled = localStorage.getItem('sound') !== 'false';
+                this.musicEnabled = localStorage.getItem('music') !== 'false';
+                this.aiVsAiMode = false;
+                this.board = this.createBoard();
+                this.currentPlayer = 'X';
+                this.activeGrid = null;
+                this.gameOver = false;
+                this.scores = JSON.parse(localStorage.getItem('scores')) || { X: 0, O: 0 };
+                this.history = JSON.parse(localStorage.getItem('gameHistory')) || [];
+                this.vsComputer = true;
+                this.playerName = localStorage.getItem('playerName') || 'مجهول';
+                
+                // تهيئة عنصر الصوت
+                this.backgroundMusic = document.getElementById('background-music');
+                this.backgroundMusic.volume = 0.3;
+                this.init();
+            }
+
+            createBoard() {
+                return Array(9).fill().map(() => ({
+                    cells: Array(9).fill(null),
+                    winner: null
+                }));
+            }
+
+            init() {
+                this.setPlayerName();
+                this.renderBoard();
+                this.addEventListeners();
+                this.updateScores();
+                this.handleMusic();
+            }
+
+            setPlayerName() {
+                const name = prompt('🎮 اسمك:', this.playerName);
+                if (name) {
+                    this.playerName = name;
+                    localStorage.setItem('playerName', name);
+                }
+            }
+
+            renderBoard() {
+                const gameBoard = document.getElementById('game-board');
+                gameBoard.innerHTML = '';
+
+                this.board.forEach((grid, bigIndex) => {
+                    const smallGrid = document.createElement('div');
+                    smallGrid.className = 'small-grid';
+                    
+                    if (this.activeGrid === bigIndex && !grid.winner) {
+                        smallGrid.classList.add('active-grid');
+                    }
+
+                    if (grid.winner) {
+                        smallGrid.classList.add(`won-${grid.winner.toLowerCase()}`);
+                    }
+
+                    grid.cells.forEach((cell, cellIndex) => {
+                        const cellEl = document.createElement('div');
+                        cellEl.className = 'cell';
+                        cellEl.dataset.bigIndex = bigIndex;
+                        cellEl.dataset.cellIndex = cellIndex;
+                        cellEl.textContent = cell || '';
+                        smallGrid.appendChild(cellEl);
+                    });
+
+                    gameBoard.appendChild(smallGrid);
+                });
+            }
+
+            addEventListeners() {
+                document.getElementById('game-board').addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('cell') || this.gameOver) return;
+
+                    const bigIndex = parseInt(e.target.dataset.bigIndex);
+                    const cellIndex = parseInt(e.target.dataset.cellIndex);
+
+                    if (this.isValidMove(bigIndex, cellIndex)) {
+                        this.makeMove(bigIndex, cellIndex);
+                        if (this.vsComputer && !this.gameOver) {
+                            setTimeout(() => this.aiMove(), 500);
+                        }
+                    }
+                });
+
+                document.getElementById('reset').addEventListener('click', () => this.resetGame(true));
+                document.getElementById('toggle-mode').addEventListener('click', () => {
+                    this.vsComputer = !this.vsComputer;
+                    document.getElementById('toggle-mode').textContent = 
+                        this.vsComputer ? '🤖 ضد الكمبيوتر' : '👥 ضد لاعب';
+                    this.resetGame();
+                });
+            }
+
+            isValidMove(bigIndex, cellIndex) {
+                if (this.activeGrid !== null && this.activeGrid !== bigIndex) return false;
+                return !this.board[bigIndex].winner && !this.board[bigIndex].cells[cellIndex];
+            }
+
+            makeMove(bigIndex, cellIndex) {
+                this.board[bigIndex].cells[cellIndex] = this.currentPlayer;
+                this.playSound('click');
+
+                if (this.checkSmallWin(bigIndex)) {
+                    this.board[bigIndex].winner = this.currentPlayer;
+                    this.scores[this.currentPlayer]++;
+                    this.updateScores();
+                    this.playSound('win');
+                }
+
+                if (this.checkBigWin()) {
+                    this.gameOver = true;
+                    this.recordGame('فوز', this.vsComputer ? 'الكمبيوتر' : 'لاعب');
+                    setTimeout(() => alert(`🤣😂${this.currentPlayer} فاز!`), 100);
+                }
+
+                this.activeGrid = this.board[cellIndex].winner ? null : cellIndex;
+                this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
+                document.getElementById('current-player').textContent = this.currentPlayer;
+                this.renderBoard();
+            }
+
+            aiMove() {
+                const validMoves = [];
+                this.board.forEach((grid, bigIndex) => {
+                    if (this.activeGrid === null || bigIndex === this.activeGrid) {
+                        grid.cells.forEach((cell, cellIndex) => {
+                            if (!cell) validMoves.push({ bigIndex, cellIndex });
+                        });
+                    }
+                });
+
+                if (validMoves.length) {
+                    const move = validMoves[Math.floor(Math.random() * validMoves.length)];
+                    setTimeout(() => this.makeMove(move.bigIndex, move.cellIndex), 500);
+                }
+            }
+
+            toggleAiVsAi() {
+                this.aiVsAiMode = !this.aiVsAiMode;
+                if (this.aiVsAiMode) this.runAiVsAi();
+            }
+
+            async runAiVsAi() {
+                while (this.aiVsAiMode && !this.gameOver) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    this.aiMove();
+                }
+            }
+
+            checkSmallWin(bigIndex) {
+                const winPatterns = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+                return winPatterns.some(pattern => pattern.every(i => 
+                    this.board[bigIndex].cells[i] === this.currentPlayer
+                ));
+            }
+
+            checkBigWin() {
+                const winPatterns = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+                return winPatterns.some(pattern => pattern.every(i => 
+                    this.board[i].winner === this.currentPlayer
+                ));
+            }
+
+            playSound(type) {
+                if (!this.soundEnabled) return;
+                const sound = document.getElementById(`${type}-sound`);
+                if (sound) {
+                    sound.currentTime = 0;
+                    sound.play();
+                }
+            }
+
+            handleMusic()  {
+                if (this.musicEnabled) {
+                    try {
+                        this.backgroundMusic.play().catch(() => {
+                            console.log('يتطلب تفاعل المستخدم لتشغيل الصوت');
+                        });
+                    } catch (e) {
+                        console.error('خطأ في تشغيل الموسيقى:', e);
+                    }
+                } else {
+                    this.backgroundMusic.pause();
+                }
+            }
+
+            toggleMusic() {
+                this.musicEnabled = !this.musicEnabled;
+                localStorage.setItem('music', this.musicEnabled);
+                this.handleMusic();
+                document.getElementById('music-status').textContent = 
+                    this.musicEnabled ? 'تشغيل' : 'إيقاف';
+                
+                // إضافة تفاعل المستخدم المطلوب
+                if (this.musicEnabled) {
+                    document.getElementById('music-status').closest('button').click();
+                }
+            }
+
+            resetGame(fullReset = false) {
+                if (fullReset) this.scores = { X: 0, O: 0 };
+                this.board = this.createBoard();
+                this.currentPlayer = 'X';
+                this.activeGrid = null;
+                this.gameOver = false;
+                this.renderBoard();
+                this.updateScores();
+            }
+
+            updateScores() {
+                document.getElementById('player1').querySelector('span').textContent = this.scores.X;
+                document.getElementById('player2').querySelector('span').textContent = this.scores.O;
+                localStorage.setItem('scores', JSON.stringify(this.scores));
+            }
+
+            recordGame(result, opponent) {
+                this.history.push({
+                    player: this.playerName,
+                    symbol: this.currentPlayer,
+                    result,
+                    opponent,
+                    timestamp: new Date().toLocaleString()
+                });
+                localStorage.setItem('gameHistory', JSON.stringify(this.history));
+            }
+        }
+
+        const game = new UltimateTicTacToe();
+        document.addEventListener('click', function initialMusicStart() {
+            game.handleMusic();
+            document.removeEventListener('click', initialMusicStart);
+        });
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+
+        
+        }
+
+        function showHistory() {
+            document.getElementById('history-page').style.display = 'flex';
+            document.getElementById('history-list').innerHTML = game.history
+                .map(entry => `
+                    <tr>
+                        <td>${entry.player}</td>
+                        <td>${entry.symbol}</td>
+                        <td>${entry.result}</td>
+                        <td>${entry.opponent}</td>
+                        <td>${entry.timestamp}</td>
+                    </tr>
+                `).join('');
+        }
+
+        function showHelp() {
+            document.getElementById('help-page').style.display = 'flex';
+        }
+
+        document.querySelectorAll('#history-page, #help-page').forEach(el => {
+            el.addEventListener('click', e => {
+                if (e.target === el) el.style.display = 'none'; 
+        });
+        });
+        function switchVersion(size) {
+           alert(`الإصدار ${size}×${size} قيد التطوير!`);
+        }
+
+    // التهيئة الأولية
+        document.getElementById('year').textContent = new Date().getFullYear();
+             if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
+</script>
+</body>
+</html>
+
+
+
